@@ -35,7 +35,7 @@ class ExcelController extends Controller
     ];
 
     protected $fields = [
-        'books' => ['title', 'isbn', 'description', 'published_at', 'author', 'categories'],
+        'books' => ['title', 'isbn', 'description', 'published_at', 'author', 'category'],
         'authors' => ['name', 'biography'],
         'categories' => ['name', 'description'],
         'users' => ['name', 'email', 'roles'],

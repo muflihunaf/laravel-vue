@@ -23,7 +23,7 @@ class BooksExport implements FromCollection, WithHeadings, WithMapping
         if ($this->isTemplate) {
             return collect([new Book()]);
         }
-        return Book::with(['authors', 'categories'])->get();
+        return Book::with(['author', 'category'])->get();
     }
 
     public function headings(): array
@@ -50,13 +50,16 @@ class BooksExport implements FromCollection, WithHeadings, WithMapping
                     $data[$field] = $book->description;
                     break;
                 case 'published_at':
-                    $data[$field] = $book->published_at?->format('Y-m-d');
+                    $data[$field] = $book->publication_year;
                     break;
                 case 'author':
-                    $data[$field] = $book->authors->pluck('name')->join(', ');
+                    $data[$field] = $book->author?->name ?? '';
                     break;
-                case 'categories':
-                    $data[$field] = $book->categories->pluck('name')->join(', ');
+                case 'category':
+                    $data[$field] = $book->category?->name ?? '';
+                    break;
+                case 'categories': // For backward compatibility
+                    $data[$field] = $book->category?->name ?? '';
                     break;
             }
         }

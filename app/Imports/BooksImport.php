@@ -13,6 +13,10 @@ class BooksImport extends BaseImport
     {
         $data = [];
         foreach ($this->fields as $field) {
+            if (!isset($row[$field])) {
+                continue;
+            }
+
             switch ($field) {
                 case 'author':
                     $author = Author::firstOrCreate(
@@ -49,7 +53,7 @@ class BooksImport extends BaseImport
             'author' => 'required|string|max:255',
             'category' => 'required|string|max:255',
             'isbn' => 'required|max:13',
-            'published_at' => 'required',
+            'published_at' => 'required|integer|min:1800|max:' . (date('Y') + 1),
         ];
     }
 } 
