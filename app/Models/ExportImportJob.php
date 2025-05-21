@@ -23,7 +23,7 @@ class ExportImportJob extends Model
         'filename',
         'filepath',
         'status',
-        'message',
+        'error'
     ];
 
     protected $casts = [

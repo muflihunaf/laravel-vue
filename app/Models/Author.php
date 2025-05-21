@@ -14,11 +14,17 @@ class Author extends Model
     protected $fillable = [
         'name',
         'biography',
-        'is_active',
+        'birth_date',
+        'death_date',
+        'nationality',
+        'website',
+        'email',
+        'photo_path',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'birth_date' => 'date',
+        'death_date' => 'date',
     ];
 
     protected $primaryKey = 'uuid';
@@ -28,7 +34,7 @@ class Author extends Model
 
     public function books()
     {
-        return $this->belongsToMany(Book::class, 'author_book', 'author_uuid', 'book_uuid');
+        return $this->hasMany(Book::class, 'author_uuid');
     }
 
     protected function getAuditTags(): array

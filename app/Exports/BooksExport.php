@@ -3,33 +3,61 @@
 namespace App\Exports;
 
 use App\Models\Book;
-use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 
-class BooksExport extends BaseExport
+class BooksExport implements FromCollection, WithHeadings, WithMapping
 {
-    protected function getQuery()
+    protected $fields;
+    protected $isTemplate;
+
+    public function __construct(array $fields, bool $isTemplate = false)
     {
-        $allowed = ['uuid', 'title', 'description', 'isbn', 'publication_year', 'file_path', 'metadata', 'is_available', 'created_at', 'updated_at', 'deleted_at'];
-        $fields = array_intersect($this->fields, $allowed);
-        return Book::with(['authors', 'categories'])
-            ->when(!empty($fields), function (Builder $query) use ($fields) {
-                $query->select(array_merge(['uuid'], $fields));
-            });
+        $this->fields = $fields;
+        $this->isTemplate = $isTemplate;
+    }
+
+    public function collection()
+    {
+        if ($this->isTemplate) {
+            return collect([new Book()]);
+        }
+        return Book::with(['authors', 'categories'])->get();
+    }
+
+    public function headings(): array
+    {
+        return $this->fields;
     }
 
     public function map($book): array
     {
+        if ($this->isTemplate) {
+            return array_fill_keys($this->fields, '');
+        }
+
         $data = [];
         foreach ($this->fields as $field) {
             switch ($field) {
+                case 'title':
+                    $data[$field] = $book->title;
+                    break;
+                case 'isbn':
+                    $data[$field] = $book->isbn;
+                    break;
+                case 'description':
+                    $data[$field] = $book->description;
+                    break;
+                case 'published_at':
+                    $data[$field] = $book->published_at?->format('Y-m-d');
+                    break;
                 case 'author':
-                    $data[] = $book->author?->name;
+                    $data[$field] = $book->authors->pluck('name')->join(', ');
                     break;
                 case 'categories':
-                    $data[] = $book->categories->pluck('name')->join(', ');
+                    $data[$field] = $book->categories->pluck('name')->join(', ');
                     break;
-                default:
-                    $data[] = $book->{$field};
             }
         }
         return $data;

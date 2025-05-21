@@ -10,28 +10,12 @@
                         <option value="books">Books</option>
                         <option value="authors">Authors</option>
                         <option value="categories">Categories</option>
+                        <option value="users">Users</option>
                     </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Fields to Export</label>
-                    <div class="mt-2 space-y-2">
-                        <div v-for="field in availableFields" :key="field" class="flex items-center">
-                            <input
-                                type="checkbox"
-                                :id="'export-' + field"
-                                v-model="selectedExportFields"
-                                :value="field"
-                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                            >
-                            <label :for="'export-' + field" class="ml-2 block text-sm text-gray-900">
-                                {{ field }}
-                            </label>
-                        </div>
-                    </div>
                 </div>
                 <button
                     @click="handleExport"
-                    :disabled="isExporting || selectedExportFields.length === 0"
+                    :disabled="isExporting"
                     class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                 >
                     {{ isExporting ? 'Exporting...' : 'Export' }}
@@ -49,42 +33,37 @@
                         <option value="books">Books</option>
                         <option value="authors">Authors</option>
                         <option value="categories">Categories</option>
+                        <option value="users">Users</option>
                     </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Fields to Import</label>
-                    <div class="mt-2 space-y-2">
-                        <div v-for="field in availableFields" :key="field" class="flex items-center">
-                            <input
-                                type="checkbox"
-                                :id="'import-' + field"
-                                v-model="selectedImportFields"
-                                :value="field"
-                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                            >
-                            <label :for="'import-' + field" class="ml-2 block text-sm text-gray-900">
-                                {{ field }}
-                            </label>
-                        </div>
+                <div class="flex justify-between items-center">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700">Excel File</label>
+                        <input
+                            type="file"
+                            @change="handleFileSelect"
+                            accept=".xlsx,.xls"
+                            class="mt-1 block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-md file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-indigo-50 file:text-indigo-700
+                                hover:file:bg-indigo-100"
+                        >
                     </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Excel File</label>
-                    <input
-                        type="file"
-                        @change="handleFileSelect"
-                        accept=".xlsx,.xls"
-                        class="mt-1 block w-full text-sm text-gray-500
-                            file:mr-4 file:py-2 file:px-4
-                            file:rounded-md file:border-0
-                            file:text-sm file:font-semibold
-                            file:bg-indigo-50 file:text-indigo-700
-                            hover:file:bg-indigo-100"
+                    <button
+                        @click="downloadTemplate"
+                        class="ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
+                        <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Template
+                    </button>
                 </div>
                 <button
                     @click="handleImport"
-                    :disabled="isImporting || !selectedFile || selectedImportFields.length === 0"
+                    :disabled="isImporting || !selectedFile"
                     class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                 >
                     {{ isImporting ? 'Importing...' : 'Import' }}
@@ -97,45 +76,29 @@
 <script setup>
 import { ref, watch } from 'vue';
 import axios from 'axios';
+import { useToast } from 'vue-toastification';
 
 const exportType = ref('books');
 const importType = ref('books');
-const availableFields = ref([]);
-const selectedExportFields = ref([]);
-const selectedImportFields = ref([]);
 const selectedFile = ref(null);
 const isExporting = ref(false);
 const isImporting = ref(false);
-
-const fetchAvailableFields = async (type) => {
-    try {
-        const response = await axios.get(`/api/excel/fields?type=${type}`);
-        availableFields.value = response.data.fields;
-    } catch (error) {
-        console.error('Error fetching available fields:', error);
-    }
-};
-
-watch([exportType, importType], async ([newExportType, newImportType]) => {
-    await fetchAvailableFields(newExportType);
-    selectedExportFields.value = [];
-    selectedImportFields.value = [];
-});
+const toast = useToast();
 
 const handleExport = async () => {
-    if (selectedExportFields.value.length === 0) return;
-
     isExporting.value = true;
     try {
         const response = await axios.post('/api/excel/export', {
             type: exportType.value,
-            fields: selectedExportFields.value
+            fields: [] // Empty array means all fields
         });
-        // Handle success (e.g., show notification)
+
+        // Show success message with job info
+        toast.success(response.data.message);
         console.log('Export started:', response.data);
     } catch (error) {
         console.error('Error exporting:', error);
-        // Handle error (e.g., show error notification)
+        toast.error('Failed to start export. Please try again.');
     } finally {
         isExporting.value = false;
     }
@@ -146,13 +109,12 @@ const handleFileSelect = (event) => {
 };
 
 const handleImport = async () => {
-    if (!selectedFile.value || selectedImportFields.value.length === 0) return;
+    if (!selectedFile.value) return;
 
     isImporting.value = true;
     const formData = new FormData();
     formData.append('file', selectedFile.value);
     formData.append('type', importType.value);
-    formData.append('fields', JSON.stringify(selectedImportFields.value));
 
     try {
         const response = await axios.post('/api/excel/import', formData, {
@@ -160,17 +122,38 @@ const handleImport = async () => {
                 'Content-Type': 'multipart/form-data'
             }
         });
-        // Handle success (e.g., show notification)
+        toast.success(response.data.message);
         console.log('Import started:', response.data);
     } catch (error) {
         console.error('Error importing:', error);
-        // Handle error (e.g., show error notification)
+        toast.error('Failed to start import. Please try again.');
     } finally {
         isImporting.value = false;
         selectedFile.value = null;
     }
 };
 
-// Initial fetch of available fields
-fetchAvailableFields(exportType.value);
+const downloadTemplate = async () => {
+    try {
+        const response = await axios.post('/api/excel/export', {
+            type: importType.value,
+            fields: [], // Empty array means all fields
+            template: true
+        }, {
+            responseType: 'blob'
+        });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${importType.value}_template.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error downloading template:', error);
+        toast.error('Failed to download template. Please try again.');
+    }
+};
 </script> 

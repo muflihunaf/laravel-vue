@@ -19,7 +19,7 @@ class BookSeeder extends Seeder
                 'publication_year' => 1997,
                 'is_available' => true,
                 'author' => 'J.K. Rowling',
-                'categories' => ['Fantasy', 'Fiction'],
+                'category' => 'Fantasy',
             ],
             [
                 'title' => 'A Game of Thrones',
@@ -28,7 +28,7 @@ class BookSeeder extends Seeder
                 'publication_year' => 1996,
                 'is_available' => true,
                 'author' => 'George R.R. Martin',
-                'categories' => ['Fantasy', 'Fiction'],
+                'category' => 'Fantasy',
             ],
             [
                 'title' => 'The Shining',
@@ -37,7 +37,7 @@ class BookSeeder extends Seeder
                 'publication_year' => 1977,
                 'is_available' => true,
                 'author' => 'Stephen King',
-                'categories' => ['Horror', 'Fiction'],
+                'category' => 'Horror',
             ],
             [
                 'title' => 'Murder on the Orient Express',
@@ -46,7 +46,7 @@ class BookSeeder extends Seeder
                 'publication_year' => 1934,
                 'is_available' => true,
                 'author' => 'Agatha Christie',
-                'categories' => ['Mystery', 'Fiction'],
+                'category' => 'Mystery',
             ],
             [
                 'title' => 'Foundation',
@@ -55,7 +55,7 @@ class BookSeeder extends Seeder
                 'publication_year' => 1951,
                 'is_available' => true,
                 'author' => 'Isaac Asimov',
-                'categories' => ['Science Fiction', 'Fiction'],
+                'category' => 'Science Fiction',
             ],
             [
                 'title' => 'Pride and Prejudice',
@@ -64,7 +64,7 @@ class BookSeeder extends Seeder
                 'publication_year' => 1813,
                 'is_available' => true,
                 'author' => 'Jane Austen',
-                'categories' => ['Romance', 'Fiction'],
+                'category' => 'Romance',
             ],
             [
                 'title' => 'The Old Man and the Sea',
@@ -73,7 +73,7 @@ class BookSeeder extends Seeder
                 'publication_year' => 1952,
                 'is_available' => true,
                 'author' => 'Ernest Hemingway',
-                'categories' => ['Fiction'],
+                'category' => 'Fiction',
             ],
             [
                 'title' => 'To the Lighthouse',
@@ -82,7 +82,7 @@ class BookSeeder extends Seeder
                 'publication_year' => 1927,
                 'is_available' => true,
                 'author' => 'Virginia Woolf',
-                'categories' => ['Fiction'],
+                'category' => 'Fiction',
             ],
             [
                 'title' => 'The Great Gatsby',
@@ -91,7 +91,7 @@ class BookSeeder extends Seeder
                 'publication_year' => 1925,
                 'is_available' => true,
                 'author' => 'F. Scott Fitzgerald',
-                'categories' => ['Fiction'],
+                'category' => 'Fiction',
             ],
             [
                 'title' => 'Beloved',
@@ -100,26 +100,30 @@ class BookSeeder extends Seeder
                 'publication_year' => 1987,
                 'is_available' => true,
                 'author' => 'Toni Morrison',
-                'categories' => ['Fiction'],
+                'category' => 'Fiction',
             ],
         ];
 
         foreach ($books as $bookData) {
-            $author = Author::where('name', $bookData['author'])->first();
-            $categories = Category::whereIn('name', $bookData['categories'])->get();
+            $author = Author::firstOrCreate(
+                ['name' => $bookData['author']],
+                ['uuid' => (string) \Illuminate\Support\Str::uuid()]
+            );
 
-            if ($author) {
-                $book = Book::create([
-                    'title' => $bookData['title'],
-                    'description' => $bookData['description'],
-                    'isbn' => $bookData['isbn'],
-                    'publication_year' => $bookData['publication_year'],
-                    'is_available' => $bookData['is_available'],
-                ]);
+            $category = Category::firstOrCreate(
+                ['name' => $bookData['category']],
+                ['uuid' => (string) \Illuminate\Support\Str::uuid()]
+            );
 
-                $book->authors()->attach($author);
-                $book->categories()->attach($categories);
-            }
+            Book::create([
+                'title' => $bookData['title'],
+                'description' => $bookData['description'],
+                'isbn' => $bookData['isbn'],
+                'publication_year' => $bookData['publication_year'],
+                'is_available' => $bookData['is_available'],
+                'author_uuid' => $author->uuid,
+                'category_uuid' => $category->uuid,
+            ]);
         }
     }
 } 

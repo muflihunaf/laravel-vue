@@ -19,23 +19,23 @@ class ProcessExport implements ShouldQueue
     protected $exportClass;
     protected $fields;
     protected $filename;
-    protected $userId;
+    protected $userUuid;
     protected $model;
     protected $jobUuid;
 
-    public function __construct(string $exportClass, array $fields, string $filename, string $userId, $model = null)
+    public function __construct(string $exportClass, array $fields, string $filename, string $userUuid, $model = null)
     {
         $this->exportClass = $exportClass;
         $this->fields = $fields;
         $this->filename = $filename;
-        $this->userId = $userId;
+        $this->userUuid = $userUuid;
         $this->model = $model;
         $this->jobUuid = (string) Str::uuid();
 
         // Create the job record as pending
         ExportImportJob::create([
             'uuid' => $this->jobUuid,
-            'user_uuid' => $userId,
+            'user_uuid' => $this->userUuid,
             'type' => 'export',
             'model' => $model ?? class_basename($exportClass),
             'fields' => $fields,
@@ -47,26 +47,44 @@ class ProcessExport implements ShouldQueue
     public function handle()
     {
         $job = ExportImportJob::find($this->jobUuid);
-        if ($job) {
-            $job->status = 'processing';
-            $job->save();
+        if (!$job) {
+            throw new \Exception('Job record not found');
         }
+
         try {
+            // Update status to processing
+            $job->update(['status' => 'processing']);
+
+            // Perform the export
             $export = new $this->exportClass($this->fields);
-            Excel::store($export, "exports/{$this->filename}", 'public');
-            if ($job) {
-                $job->status = 'completed';
-                $job->filepath = "exports/{$this->filename}";
-                $job->save();
-            }
-            // Notify user that export is complete (optional)
+            $filePath = 'exports/' . $this->filename;
+            
+            Excel::store($export, $filePath, 'public');
+
+            // Update job status
+            $job->update([
+                'status' => 'completed',
+                'filepath' => $filePath
+            ]);
+
+            // Notify user (you can implement your notification system here)
+            // For example, using Laravel's notification system or broadcasting
+
         } catch (\Exception $e) {
-            if ($job) {
-                $job->status = 'failed';
-                $job->message = $e->getMessage();
-                $job->save();
-            }
+            // Update job status with error
+            $job->update([
+                'status' => 'failed',
+                'error' => $e->getMessage()
+            ]);
+
+            // Re-throw the exception to trigger job failure
             throw $e;
         }
+    }
+
+    public function failed(\Throwable $exception)
+    {
+        // Handle job failure
+        // You can implement additional failure handling here
     }
 } 

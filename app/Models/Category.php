@@ -14,7 +14,7 @@ class Category extends Model
     protected $fillable = [
         'name',
         'description',
-        'is_active',
+        'parent_uuid',
     ];
 
     protected $casts = [
@@ -27,7 +27,17 @@ class Category extends Model
 
     public function books()
     {
-        return $this->belongsToMany(Book::class, 'book_category', 'category_uuid', 'book_uuid');
+        return $this->hasMany(Book::class, 'category_uuid');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Category::class, 'parent_uuid');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Category::class, 'parent_uuid');
     }
 
     protected function getAuditTags(): array

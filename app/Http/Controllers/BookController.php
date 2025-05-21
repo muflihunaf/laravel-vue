@@ -11,7 +11,7 @@ class BookController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Book::with(['authors', 'categories'])
+        $query = Book::with(['author', 'category'])
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('title', 'like', "%{$search}%")
@@ -21,19 +21,17 @@ class BookController extends Controller
             ->when($request->is_available !== null, function ($query) use ($request) {
                 $query->where('is_available', $request->is_available);
             })
-            ->when($request->sort_field == 'authors', function ($query) use ($request) {
-                $query->leftJoin('author_book', 'books.uuid', '=', 'author_book.book_uuid')
-                      ->leftJoin('authors', 'authors.uuid', '=', 'author_book.author_uuid')
+            ->when($request->sort_field == 'author', function ($query) use ($request) {
+                $query->leftJoin('authors', 'books.author_uuid', '=', 'authors.uuid')
                       ->orderBy('authors.name', $request->sort_direction ?? 'asc')
                       ->select('books.*');
             })
-            ->when($request->sort_field == 'categories', function ($query) use ($request) {
-                $query->leftJoin('book_category', 'books.uuid', '=', 'book_category.book_uuid')
-                      ->leftJoin('categories', 'categories.uuid', '=', 'book_category.category_uuid')
+            ->when($request->sort_field == 'category', function ($query) use ($request) {
+                $query->leftJoin('categories', 'books.category_uuid', '=', 'categories.uuid')
                       ->orderBy('categories.name', $request->sort_direction ?? 'asc')
                       ->select('books.*');
             })
-            ->when($request->sort_field && !in_array($request->sort_field, ['authors', 'categories']), function ($query) use ($request) {
+            ->when($request->sort_field && !in_array($request->sort_field, ['author', 'category']), function ($query) use ($request) {
                 $query->orderBy($request->sort_field, $request->sort_direction ?? 'asc');
             })
             ->when(!$request->sort_field, function ($query) {
@@ -52,11 +50,9 @@ class BookController extends Controller
             'publication_year' => 'required|integer|min:1800|max:' . (date('Y') + 1),
             'file' => 'nullable|file|mimes:pdf,epub,mobi|max:500',
             'metadata' => 'nullable|array',
-            'is_available' => 'required',
-            'authors' => 'required|array|min:1',
-            'authors.*' => 'exists:authors,uuid',
-            'categories' => 'required|array|min:1',
-            'categories.*' => 'exists:categories,uuid',
+            'is_available' => 'required|boolean',
+            'author_uuid' => 'required|exists:authors,uuid',
+            'category_uuid' => 'required|exists:categories,uuid',
         ]);
 
         if ($request->hasFile('file')) {
@@ -65,23 +61,14 @@ class BookController extends Controller
             $validated['file_path'] = $path;
         }
 
-        // check if is_available is true or false
-        if ($validated['is_available'] == 'true') {
-            $validated['is_available'] = 1;
-        } else {
-            $validated['is_available'] = 0;
-        }
-
         $book = Book::create($validated);
-        $book->authors()->sync($validated['authors']);
-        $book->categories()->sync($validated['categories']);
 
-        return response()->json($book->load(['authors', 'categories']), 201);
+        return response()->json($book->load(['author', 'category']), 201);
     }
 
     public function show(Book $book)
     {
-        return response()->json($book->load(['authors', 'categories']));
+        return response()->json($book->load(['author', 'category']));
     }
 
     public function update(Request $request, Book $book)
@@ -94,10 +81,8 @@ class BookController extends Controller
             'file' => 'nullable|file|mimes:pdf,epub,mobi|max:500',
             'metadata' => 'nullable|array',
             'is_available' => 'required|boolean',
-            'authors' => 'required|array|min:1',
-            'authors.*' => 'exists:authors,uuid',
-            'categories' => 'required|array|min:1',
-            'categories.*' => 'exists:categories,uuid',
+            'author_uuid' => 'required|exists:authors,uuid',
+            'category_uuid' => 'required|exists:categories,uuid',
         ]);
 
         if ($request->hasFile('file')) {
@@ -112,10 +97,8 @@ class BookController extends Controller
         }
 
         $book->update($validated);
-        $book->authors()->sync($validated['authors']);
-        $book->categories()->sync($validated['categories']);
 
-        return response()->json($book->load(['authors', 'categories']));
+        return response()->json($book->load(['author', 'category']));
     }
 
     public function destroy(Book $book)
@@ -141,9 +124,10 @@ class BookController extends Controller
     public function download(Book $book)
     {
         if (!$book->file_path) {
-            return response()->json(['message' => 'No file available'], 404);
+            return response()->json(['message' => 'No file available for download'], 404);
         }
 
-        return Storage::disk('public')->download($book->file_path);
+        $path = Storage::disk('public')->path($book->file_path);
+        return response()->download($path);
     }
 } 

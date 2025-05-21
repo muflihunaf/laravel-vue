@@ -18,6 +18,8 @@ class Book extends Model
         'file_path',
         'publication_year',
         'is_available',
+        'author_uuid',
+        'category_uuid',
     ];
 
     protected $casts = [
@@ -29,14 +31,14 @@ class Book extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    public function authors()
+    public function author()
     {
-        return $this->belongsToMany(Author::class);
+        return $this->belongsTo(Author::class, 'author_uuid');
     }
 
-    public function categories()
+    public function category()
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsTo(Category::class, 'category_uuid');
     }
 
     protected function getAuditTags(): array

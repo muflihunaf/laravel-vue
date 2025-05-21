@@ -19,23 +19,23 @@ class ProcessImport implements ShouldQueue
     protected $importClass;
     protected $fields;
     protected $filepath;
-    protected $userId;
+    protected $userUuid;
     protected $model;
     protected $jobUuid;
 
-    public function __construct(string $importClass, array $fields, string $filepath, string $userId, $model = null)
+    public function __construct(string $importClass, array $fields, string $filepath, string $userUuid, $model = null)
     {
         $this->importClass = $importClass;
         $this->fields = $fields;
         $this->filepath = $filepath;
-        $this->userId = $userId;
+        $this->userUuid = $userUuid;
         $this->model = $model;
         $this->jobUuid = (string) Str::uuid();
 
         // Create the job record as pending
         ExportImportJob::create([
             'uuid' => $this->jobUuid,
-            'user_uuid' => $userId,
+            'user_uuid' => $this->userUuid,
             'type' => 'import',
             'model' => $model ?? class_basename($importClass),
             'fields' => $fields,
@@ -48,26 +48,49 @@ class ProcessImport implements ShouldQueue
     public function handle()
     {
         $job = ExportImportJob::find($this->jobUuid);
-        if ($job) {
-            $job->status = 'processing';
-            $job->save();
+        if (!$job) {
+            throw new \Exception('Job record not found');
         }
+
         try {
+            // Update status to processing
+            $job->update(['status' => 'processing']);
+
+            // Perform the import
             $import = new $this->importClass($this->fields);
-            Excel::import($import, $this->filepath);
+            Excel::import($import, Storage::path($this->filepath));
+
+            // Update job status
+            $job->update([
+                'status' => 'completed'
+            ]);
+
+            // Clean up the temporary file
             Storage::delete($this->filepath);
-            if ($job) {
-                $job->status = 'completed';
-                $job->save();
-            }
-            // Notify user that import is complete (optional)
+
+            // Notify user (you can implement your notification system here)
+            // For example, using Laravel's notification system or broadcasting
+
         } catch (\Exception $e) {
-            if ($job) {
-                $job->status = 'failed';
-                $job->message = $e->getMessage();
-                $job->save();
+            // Update job status with error
+            $job->update([
+                'status' => 'failed',
+                'error' => $e->getMessage()
+            ]);
+
+            // Clean up the temporary file
+            if (Storage::exists($this->filepath)) {
+                Storage::delete($this->filepath);
             }
+
+            // Re-throw the exception to trigger job failure
             throw $e;
         }
+    }
+
+    public function failed(\Throwable $exception)
+    {
+        // Handle job failure
+        // You can implement additional failure handling here
     }
 } 

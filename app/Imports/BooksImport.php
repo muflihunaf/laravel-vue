@@ -19,30 +19,27 @@ class BooksImport extends BaseImport
                         ['name' => $row['author']],
                         ['uuid' => (string) Str::uuid()]
                     );
-                    $data['author_id'] = $author->id;
+                    $data['author_uuid'] = $author->uuid;
                     break;
-                case 'categories':
-                    $categoryIds = collect(explode(',', $row['categories']))
-                        ->map(function ($name) {
-                            return Category::firstOrCreate(
-                                ['name' => trim($name)],
-                                ['uuid' => (string) Str::uuid()]
-                            )->id;
-                        });
-                    $data['category_ids'] = $categoryIds;
+                case 'category':
+                    $category = Category::firstOrCreate(
+                        ['name' => $row['category']],
+                        ['uuid' => (string) Str::uuid()]
+                    );
+                    $data['category_uuid'] = $category->uuid;
+                    break;
+                case 'isbn':
+                    $data[$field] = (string) $row[$field];
+                    break;
+                case 'published_at':
+                    $data['publication_year'] = (int) $row[$field];
                     break;
                 default:
                     $data[$field] = $row[$field];
             }
         }
 
-        $book = Book::create(array_merge($data, ['uuid' => (string) Str::uuid()]));
-        
-        if (isset($data['category_ids'])) {
-            $book->categories()->sync($data['category_ids']);
-        }
-
-        return $book;
+        return Book::create(array_merge($data, ['uuid' => (string) Str::uuid()]));
     }
 
     public function rules(): array
@@ -50,9 +47,9 @@ class BooksImport extends BaseImport
         return [
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
-            'isbn' => 'required|string|max:13',
-            'published_at' => 'required|date',
-            'categories' => 'required|string',
+            'category' => 'required|string|max:255',
+            'isbn' => 'required|max:13',
+            'published_at' => 'required',
         ];
     }
 } 

@@ -155,7 +155,10 @@ const downloadBook = async () => {
 };
 
 const editBook = () => {
-    router.push(`/books/${book.value.uuid}/edit`);
+    router.push({ 
+        name: 'books',
+        query: { edit: book.value.uuid }
+    });
 };
 
 onMounted(() => {
