@@ -113,7 +113,13 @@ const fetchAuthor = async () => {
 };
 
 const editAuthor = () => {
-    router.push(`/authors/${author.value.uuid}/edit`);
+    router.push('/authors');
+    // The modal will be opened in the Authors component
+    // We'll pass the author data through the route state
+    router.push({
+        name: 'authors',
+        state: { editAuthor: author.value }
+    });
 };
 
 onMounted(() => {

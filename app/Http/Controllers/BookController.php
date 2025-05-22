@@ -50,7 +50,7 @@ class BookController extends Controller
             'publication_year' => 'required|integer|min:1800|max:' . (date('Y') + 1),
             'file' => 'nullable|file|mimes:pdf,epub,mobi|max:500',
             'metadata' => 'nullable|array',
-            'is_available' => 'required|boolean',
+            'is_available' => 'required',
             'author_uuid' => 'required|exists:authors,uuid',
             'category_uuid' => 'required|exists:categories,uuid',
         ]);
@@ -60,6 +60,8 @@ class BookController extends Controller
             $path = $file->store('books', 'public');
             $validated['file_path'] = $path;
         }
+
+        $validated['is_available'] = $validated['is_available'] == '1' ? true : false;
 
         $book = Book::create($validated);
 

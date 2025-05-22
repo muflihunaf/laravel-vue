@@ -34,6 +34,7 @@ class RoleSeeder extends Seeder
                 'view_books', 'create_books', 'edit_books', 'delete_books', 'download_books',
                 'view_authors', 'create_authors', 'edit_authors', 'delete_authors',
                 'view_categories', 'create_categories', 'edit_categories', 'delete_categories',
+                'view_roles', 'create_roles', 'edit_roles', 'delete_roles',
             ])->get()
         );
 

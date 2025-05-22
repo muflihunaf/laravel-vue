@@ -18,6 +18,7 @@
                                     ? 'border-indigo-500 text-gray-900'
                                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
                             ]"
+                            
                         >
                             Dashboard
                         </router-link>
@@ -31,6 +32,7 @@
                                     ? 'border-indigo-500 text-gray-900'
                                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
                             ]"
+                            v-if="hasRole('Administrator')"
                         >
                             Users
                         </router-link>
@@ -44,6 +46,7 @@
                                     ? 'border-indigo-500 text-gray-900'
                                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
                             ]"
+                            v-if="hasRole('Administrator') || hasRole('Librarian') || hasRole('Reader')"
                         >
                             Roles
                         </router-link>
@@ -97,38 +100,14 @@
                             Export/Import History
                         </router-link>
 
-                        <router-link
-                            v-if="hasRole('Administrator')"
-                            to="/users"
-                            class="inline-flex items-center px-1 pt-1 border-b-2"
-                            :class="[
-                                $route.path === '/users'
-                                    ? 'border-indigo-500 text-gray-900'
-                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                            ]"
-                        >
-                            Users
-                        </router-link>
-
-                        <router-link
-                            v-if="hasRole('Administrator')"
-                            to="/roles"
-                            class="inline-flex items-center px-1 pt-1 border-b-2"
-                            :class="[
-                                $route.path === '/roles'
-                                    ? 'border-indigo-500 text-gray-900'
-                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                            ]"
-                        >
-                            Roles
-                        </router-link>
+                        
                     </div>
                 </div>
 
                 <!-- Right side -->
                 <div class="flex items-center">
                     <!-- Profile dropdown -->
-                    <div class="ml-3 relative">
+                    <div class="ml-3 relative" v-if="hasRole('Administrator')">
                         <div>
                             <button
                                 @click="showProfileMenu = !showProfileMenu"
@@ -281,13 +260,14 @@ const userInitials = computed(() => {
 });
 
 const hasRole = (role) => {
-    return user.value.roles?.includes(role);
+    return user.value.roles && user.value.roles.some(r => r.name === role);
 };
 
 const fetchUser = async () => {
     try {
         const response = await axios.get('/api/user');
         user.value = response.data;
+        console.log('Fetched user data:', user.value);
     } catch (error) {
         console.error('Error fetching user:', error);
     }

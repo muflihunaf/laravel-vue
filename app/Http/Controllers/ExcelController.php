@@ -29,8 +29,8 @@ class ExcelController extends Controller
 
     protected $importClasses = [
         'books' => BooksImport::class,
-        'authors' => AuthorsImport::class,
-        'categories' => CategoriesImport::class,
+        // 'authors' => AuthorsImport::class,
+        // 'categories' => CategoriesImport::class,
         'users' => UsersImport::class,
     ];
 

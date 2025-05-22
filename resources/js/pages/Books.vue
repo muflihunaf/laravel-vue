@@ -406,14 +406,14 @@
                                             type="file"
                                             @change="handleFileUpload"
                                             class="sr-only"
-                                            accept=".pdf,.epub,.mobi"
+                                            accept=".pdf"
                                             :disabled="formLoading"
                                         />
                                     </label>
                                     <p class="pl-1">or drag and drop</p>
                                 </div>
                                 <p class="text-xs text-gray-500">
-                                    PDF, EPUB, MOBI up to 500KB
+                                    PDF max 500KB
                                 </p>
                                 <p v-if="form.file" class="text-sm text-indigo-600">
                                     Selected: {{ form.file.name }}
@@ -566,8 +566,8 @@ const editBook = (book) => {
         description: book.description,
         isbn: book.isbn,
         publication_year: book.publication_year,
-        author_uuid: book.authors[0]?.uuid || '',
-        category_uuid: book.categories[0]?.uuid || '',
+        author_uuid: book.author?.uuid || '',
+        category_uuid: book.category?.uuid || '',
         file: null,
         is_available: Boolean(book.is_available),
     };

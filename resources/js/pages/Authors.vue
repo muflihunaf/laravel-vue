@@ -238,7 +238,7 @@
 import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 import AuditLog from '../components/AuditLog.vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { usePermissions } from '../composables/usePermissions';
 import ExcelOperations from '../components/ExcelOperations.vue';
 import MainLayout from '../layouts/MainLayout.vue';
@@ -256,6 +256,7 @@ const sortDirection = ref('desc');
 const router = useRouter();
 const showTrash = ref(false);
 const { hasPermission } = usePermissions();
+const route = useRoute();
 
 const columns = [
     { field: 'name', label: 'Name' },
@@ -386,6 +387,19 @@ const forceDeleteAuthor = async (author) => {
         toast.error('Failed to permanently delete author.');
     }
 };
+
+// Watch for route state changes
+watch(() => route.state, (newState) => {
+    if (newState?.editAuthor) {
+        editingAuthor.value = newState.editAuthor;
+        form.value = {
+            name: newState.editAuthor.name,
+            biography: newState.editAuthor.biography,
+            is_active: newState.editAuthor.is_active,
+        };
+        showCreateModal.value = true;
+    }
+}, { immediate: true });
 
 watch([currentPage, search, isActive, showTrash], () => {
     fetchAuthors();

@@ -34,7 +34,7 @@ trait Auditable
         $newValues = $event === 'deleted' ? null : $this->getAttributes();
 
         $this->audits()->create([
-            'user_id' => Auth::id(),
+            'user_id' => Auth::user()->uuid ?? null,
             'event' => $event,
             'old_values' => $oldValues,
             'new_values' => $newValues,

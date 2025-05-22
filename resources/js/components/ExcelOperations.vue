@@ -31,9 +31,9 @@
                     <label class="block text-sm font-medium text-gray-700">Type</label>
                     <select v-model="importType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         <option value="books">Books</option>
-                        <option value="authors">Authors</option>
+                        <!-- <option value="authors">Authors</option>
                         <option value="categories">Categories</option>
-                        <option value="users">Users</option>
+                        <option value="users">Users</option> -->
                     </select>
                 </div>
                 <div class="flex justify-between items-center">
