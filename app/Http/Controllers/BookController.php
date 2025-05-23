@@ -48,7 +48,7 @@ class BookController extends Controller
             'description' => 'nullable|string',
             'isbn' => 'required|string|unique:books,isbn',
             'publication_year' => 'required|integer|min:1800|max:' . (date('Y') + 1),
-            'file' => 'nullable|file|mimes:pdf,epub,mobi|max:500',
+            'file' => 'nullable|file|mimes:pdf|max:500|min:100',
             'metadata' => 'nullable|array',
             'is_available' => 'required',
             'author_uuid' => 'required|exists:authors,uuid',
